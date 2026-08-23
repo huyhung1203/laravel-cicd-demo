@@ -1,0 +1,37 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  deploy:
+
+    runs-on: self-hosted
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Stop old containers
+        run: docker compose down
+
+      - name: Build new containers
+        run: docker compose build
+
+      - name: Start containers
+        run: docker compose up -d
+
+      - name: Run migrations
+        run: docker compose exec -T app php artisan migrate --force
+
+      - name: Clear cache
+        run: docker compose exec -T app php artisan optimize:clear
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl --fail http://localhost:8080/api/health
